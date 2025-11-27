@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Group Finder Web</title>
+<style>
+    body { background:#0d0d0d; color:#eee; font-family:Consolas, monospace; }
+    input, button { margin:5px 0; padding:8px; width:100%; }
+    #output {
+        background:#111;
+        border:1px solid #333;
+        padding:10px;
+        height:300px;
+        overflow-y:auto;
+        white-space:pre-wrap;
+        font-size:13px;
+    }
+</style>
+</head>
+<body>
+
+<h3>Roblox Group Finder</h3>
+
+<input id="webhook" placeholder="Discord Webhook URL">
+<input id="threads" type="number" value="5" min="1" max="200">
+<button onclick="startFinder()">Start</button>
+
+<div id="output"></div>
+
+<script>
+const DELAY_MS = 500;
+let WEBHOOK_URL = "";
+
+async function sendWebhook(message) {
+    if (!WEBHOOK_URL) return;
+    try {
+        await fetch(WEBHOOK_URL, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({content: message})
+        });
+    } catch (err) {
+        log("Webhook error: " + err);
+    }
+}
+
+function log(msg) {
+    const out = document.getElementById("output");
+    out.textContent += msg + "\n";
+    out.scrollTop = out.scrollHeight;
+}
+
+async function groupFinder() {
+    while (true) {
+        const gid = Math.floor(Math.random() * (999999999 - 1000000)) + 1000000;
+        
+        try {
+            const res = await fetch(`https://groups.roblox.com/v1/groups/${gid}`);
+            if (!res.ok) {
+                log(`[-] Invalid: ${gid}`);
+                await new Promise(r => setTimeout(r, DELAY_MS));
+                continue;
+            }
+            
+            const data = await res.json();
+            
+            if (data.owner === null && data.publicEntryAllowed && !data.isLocked) {
+                const url = `https://www.roblox.com/groups/group.aspx?gid=${gid}`;
+                log(`[+] Hit: ${gid}`);
+                await sendWebhook("Hit: " + url);
+            } else {
+                log(`[-] Not Joinable: ${gid}`);
+            }
+            
+        } catch (err) {
+            log("Error: " + err);
+        }
+        
+        await new Promise(r => setTimeout(r, DELAY_MS));
+    }
+}
+
+function startFinder() {
+    WEBHOOK_URL = document.getElementById("webhook").value;
+    const threads = parseInt(document.getElementById("threads").value) || 5;
+    log("Starting with " + threads + " workers...");
+    for (let i = 0; i < threads; i++) groupFinder();
+}
+</script>
+
+</body>
+</html>
