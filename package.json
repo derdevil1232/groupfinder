@@ -1,0 +1,13 @@
+{
+  "name": "groupfinder",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "node-fetch": "^2.6.7"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
